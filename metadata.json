@@ -1,0 +1,5 @@
+{
+  "name": "Stark Command Center",
+  "description": "A futuristic AI-powered life and project management system inspired by Tony Stark's Jarvis.",
+  "requestFramePermissions": ["microphone"]
+}

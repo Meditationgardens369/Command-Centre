@@ -1,0 +1,99 @@
+{
+  "entities": {
+    "Task": {
+      "title": "Task",
+      "description": "A single actionable item in the command center.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "description": "The description of the task." },
+        "category": { "type": "string", "enum": ["Business", "House", "Family"], "description": "The life pillar this task belongs to." },
+        "priority": { "type": "string", "enum": ["High", "Medium", "Low"], "description": "The importance level of the task." },
+        "status": { "type": "string", "enum": ["Pending", "Completed"], "description": "Current status of the task." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "When the task was created." },
+        "uid": { "type": "string", "description": "The owner of the task." }
+      },
+      "required": ["title", "category", "priority", "status", "createdAt", "uid"]
+    },
+    "Insight": {
+      "title": "Insight",
+      "description": "A strategic revelation or discovery.",
+      "type": "object",
+      "properties": {
+        "content": { "type": "string", "description": "The insight text." },
+        "category": { "type": "string", "enum": ["Business", "House", "Family", "General"], "description": "The category of the insight." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "When the insight was recorded." },
+        "uid": { "type": "string", "description": "The owner of the insight." }
+      },
+      "required": ["content", "category", "createdAt", "uid"]
+    },
+    "Project": {
+      "title": "Project",
+      "description": "A high-level initiative.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "The name of the project." },
+        "category": { "type": "string", "enum": ["Business", "House", "Family"], "description": "The category of the project." },
+        "progress": { "type": "integer", "description": "Progress percentage (0-100)." },
+        "status": { "type": "string", "enum": ["Active", "On Hold", "Completed"], "description": "Current status of the project." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "When the project was started." },
+        "uid": { "type": "string", "description": "The owner of the project." }
+      },
+      "required": ["name", "category", "progress", "status", "createdAt", "uid"]
+    },
+    "WeeklyPlan": {
+      "title": "WeeklyPlan",
+      "description": "The strategic plan for a specific week.",
+      "type": "object",
+      "properties": {
+        "weekStartDate": { "type": "string", "format": "date", "description": "The Monday starting the week." },
+        "outcomes": {
+          "type": "object",
+          "properties": {
+            "business": { "type": "string" },
+            "house": { "type": "string" },
+            "family": { "type": "string" }
+          }
+        },
+        "wins": { "type": "array", "items": { "type": "string" } },
+        "insights": { "type": "array", "items": { "type": "string" } },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "uid": { "type": "string" }
+      },
+      "required": ["weekStartDate", "outcomes", "uid"]
+    },
+    "Opportunity": {
+      "title": "Opportunity",
+      "description": "A potential high-leverage project or idea.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "leverageScore": { "type": "integer", "description": "Score from 1-10." },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "uid": { "type": "string" }
+      },
+      "required": ["title", "leverageScore", "uid"]
+    },
+    "Asset": {
+      "title": "Asset",
+      "description": "A digital or physical asset being built.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "type": { "type": "string" },
+        "progress": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "uid": { "type": "string" }
+      },
+      "required": ["name", "type", "progress", "uid"]
+    }
+  },
+  "firestore": {
+    "/tasks/{taskId}": { "schema": "Task", "description": "Actionable tasks." },
+    "/insights/{insightId}": { "schema": "Insight", "description": "Strategic revelations." },
+    "/projects/{projectId}": { "schema": "Project", "description": "Active projects." },
+    "/weeklyPlans/{planId}": { "schema": "WeeklyPlan", "description": "Weekly reset data." },
+    "/opportunities/{opportunityId}": { "schema": "Opportunity", "description": "Opportunity radar items." },
+    "/assets/{assetId}": { "schema": "Asset", "description": "Asset builder items." }
+  }
+}

@@ -1,0 +1,175 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: tasks
+    // Fields: title (string), category (enum: Business, House, Family), priority (enum: High, Medium, Low), status (enum: Pending, Completed), createdAt (timestamp), uid (string)
+    //
+    // Collection: insights
+    // Fields: content (string), category (enum: Business, House, Family, General), createdAt (timestamp), uid (string)
+    //
+    // Collection: projects
+    // Fields: name (string), category (enum: Business, House, Family), progress (int, 0-100), status (enum: Active, On Hold, Completed), createdAt (timestamp), uid (string)
+    //
+    // Collection: weeklyPlans
+    // Fields: weekStartDate (string, YYYY-MM-DD), outcomes (map), wins (list), insights (list), createdAt (timestamp), uid (string)
+    //
+    // Collection: opportunities
+    // Fields: title (string), description (string), leverageScore (int, 1-10), createdAt (timestamp), uid (string)
+    //
+    // Collection: assets
+    // Fields: name (string), type (string), progress (int, 0-100), createdAt (timestamp), uid (string)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isDocOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.uid;
+    }
+
+    function uidUnchanged() {
+      return !('uid' in request.resource.data) || request.resource.data.uid == request.auth.uid;
+    }
+
+    function uidNotModified() {
+      return !('uid' in request.resource.data) || request.resource.data.uid == resource.data.uid;
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function isValidCategory(category) {
+      return category in ['Business', 'House', 'Family', 'General'];
+    }
+
+    function isValidPriority(priority) {
+      return priority in ['High', 'Medium', 'Low'];
+    }
+
+    function isValidStatus(status) {
+      return status in ['Pending', 'Completed', 'Active', 'On Hold'];
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+    function isValidTask(data) {
+      return hasRequiredFields(['title', 'category', 'priority', 'status', 'createdAt', 'uid']) &&
+             data.title is string && data.title.size() > 0 && data.title.size() < 500 &&
+             isValidCategory(data.category) &&
+             isValidPriority(data.priority) &&
+             data.status in ['Pending', 'Completed'] &&
+             data.createdAt is timestamp &&
+             data.uid == request.auth.uid;
+    }
+
+    function isValidInsight(data) {
+      return hasRequiredFields(['content', 'category', 'createdAt', 'uid']) &&
+             data.content is string && data.content.size() > 0 && data.content.size() < 2000 &&
+             isValidCategory(data.category) &&
+             data.createdAt is timestamp &&
+             data.uid == request.auth.uid;
+    }
+
+    function isValidProject(data) {
+      return hasRequiredFields(['name', 'category', 'progress', 'status', 'createdAt', 'uid']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 200 &&
+             isValidCategory(data.category) &&
+             data.progress is int && data.progress >= 0 && data.progress <= 100 &&
+             data.status in ['Active', 'On Hold', 'Completed'] &&
+             data.createdAt is timestamp &&
+             data.uid == request.auth.uid;
+    }
+
+    function isValidWeeklyPlan(data) {
+      return hasRequiredFields(['weekStartDate', 'outcomes', 'uid']) &&
+             data.weekStartDate is string && data.weekStartDate.matches("^\\d{4}-\\d{2}-\\d{2}$") &&
+             data.outcomes is map &&
+             data.uid == request.auth.uid;
+    }
+
+    function isValidOpportunity(data) {
+      return hasRequiredFields(['title', 'leverageScore', 'uid']) &&
+             data.title is string && data.title.size() > 0 && data.title.size() < 200 &&
+             data.leverageScore is int && data.leverageScore >= 1 && data.leverageScore <= 10 &&
+             data.uid == request.auth.uid;
+    }
+
+    function isValidAsset(data) {
+      return hasRequiredFields(['name', 'type', 'progress', 'uid']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 200 &&
+             data.type is string &&
+             data.progress is int && data.progress >= 0 && data.progress <= 100 &&
+             data.uid == request.auth.uid;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+    match /tasks/{taskId} {
+      allow read: if isDocOwner();
+      allow create: if isAuthenticated() && isValidTask(request.resource.data);
+      allow update: if isDocOwner() && isValidTask(request.resource.data) && uidNotModified();
+      allow delete: if isDocOwner();
+    }
+
+    match /insights/{insightId} {
+      allow read: if isDocOwner();
+      allow create: if isAuthenticated() && isValidInsight(request.resource.data);
+      allow update: if isDocOwner() && isValidInsight(request.resource.data) && uidNotModified();
+      allow delete: if isDocOwner();
+    }
+
+    match /projects/{projectId} {
+      allow read: if isDocOwner();
+      allow create: if isAuthenticated() && isValidProject(request.resource.data);
+      allow update: if isDocOwner() && isValidProject(request.resource.data) && uidNotModified();
+      allow delete: if isDocOwner();
+    }
+
+    match /weeklyPlans/{planId} {
+      allow read: if isDocOwner();
+      allow create: if isAuthenticated() && isValidWeeklyPlan(request.resource.data);
+      allow update: if isDocOwner() && isValidWeeklyPlan(request.resource.data) && uidNotModified();
+      allow delete: if isDocOwner();
+    }
+
+    match /opportunities/{opportunityId} {
+      allow read: if isDocOwner();
+      allow create: if isAuthenticated() && isValidOpportunity(request.resource.data);
+      allow update: if isDocOwner() && isValidOpportunity(request.resource.data) && uidNotModified();
+      allow delete: if isDocOwner();
+    }
+
+    match /assets/{assetId} {
+      allow read: if isDocOwner();
+      allow create: if isAuthenticated() && isValidAsset(request.resource.data);
+      allow update: if isDocOwner() && isValidAsset(request.resource.data) && uidNotModified();
+      allow delete: if isDocOwner();
+    }
+
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
+    }
+  }
+}
